@@ -5,17 +5,41 @@ const Company = require('../companies/model')
 const router = new Router()
 
 router.get('/customers', (req, res, next) => {
-  Customer
-    .findAll()
-    .then(customers => {
-      res.send({ customers })
+  //Pagination 
+  const limit = req.query.limit || 25
+  const offset = req.query.offset || 0
+
+  Promise.all([
+    Customer.count(),
+    Customer.findAll({ limit, offset })
+  ])
+    .then(([total, customers]) => {
+      res.send({
+        customers, total
+      })
     })
     .catch(error => next(error))
 })
 
+// Yukardaki kod Promise ile yapildi. Yani iki aksiyonu birbirinden ayirdik.
+// Customer
+//   .count()
+//   .then(total => {
+//     Customer
+//       .findAll({
+//         limit, offset
+//       })
+//       .then(customers => {
+//         res.send({ customers, total })
+//       })
+//       .catch(error => next(error))
+//   })
+//   .catch(error => next(error))
+// })
+
 router.get('/customers/:id', (req, res, next) => {
   Customer
-    .findById(req.params.id, {include:[Company]})
+    .findById(req.params.id, { include: [Company] })
     .then(customer => {
       if (!customer) {
         return res.status(404).send({
